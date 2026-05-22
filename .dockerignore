@@ -1,0 +1,64 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+env/
+pip-selfcheck.json
+
+# 数据库和密钥（会被挂载卷覆盖）
+db/passwords.db
+db/.key
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 系统文件
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# 日志
+*.log
+logs/
+
+# 环境变量
+.env
+.env.local
+.env.*.local
+
+# 依赖
+node_modules/
+package-lock.json
+
+# Docker相关
+docker-compose.yml
+.dockerignore
+Dockerfile
+
+# GitHub相关
+.github/
+GITHUB_GUIDE.md
+github-setup.sh
+
+# 其他
+*.md
+LICENSE
+password-manager.service
+start.sh
+test.sh

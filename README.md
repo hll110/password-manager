@@ -21,13 +21,117 @@
 ### 方式一: 克隆仓库
 
 ```bash
-git clone https://github.com/你的用户名/password-manager.git
+git clone https://github.com/hll110/password-manager.git
 cd password-manager
 ```
 
 ### 方式二: 直接下载
 
 下载项目文件到本地目录。
+
+### 方式三: Docker部署 (推荐)
+
+```bash
+# 克隆项目
+git clone https://github.com/hll110/password-manager.git
+cd password-manager
+
+# 一键部署
+chmod +x docker-deploy.sh
+./docker-deploy.sh
+```
+
+## 🐳 Docker部署
+
+### 快速部署
+
+```bash
+# 克隆项目
+git clone https://github.com/hll110/password-manager.git
+cd password-manager
+
+# 一键部署
+chmod +x docker-deploy.sh
+./docker-deploy.sh
+```
+
+### 手动部署
+
+```bash
+# 构建镜像
+docker-compose build
+
+# 启动服务
+docker-compose up -d
+
+# 查看状态
+docker-compose ps
+
+# 查看日志
+docker-compose logs -f
+```
+
+### 数据持久化
+
+数据库和密钥文件自动持久化到宿主机：
+
+```
+./db/passwords.db  # 加密的密码数据库
+./db/.key          # 解密密钥
+```
+
+**重要**: 请妥善保管 `db/.key` 文件，丢失将无法解密密码！
+
+### 备份与恢复
+
+```bash
+# 备份数据库
+chmod +x backup.sh
+./backup.sh
+
+# 恢复数据库
+chmod +x restore.sh
+./restore.sh ./backups/passwords_backup_xxx.tar.gz
+```
+
+### 常用命令
+
+```bash
+# 启动服务
+docker-compose up -d
+
+# 停止服务
+docker-compose down
+
+# 重启服务
+docker-compose restart
+
+# 查看日志
+docker-compose logs -f
+
+# 更新部署
+git pull
+docker-compose build
+docker-compose up -d
+```
+
+### 环境变量
+
+| 变量名 | 默认值 | 说明 |
+|--------|--------|------|
+| `FLASK_ENV` | `production` | Flask环境 |
+| `TZ` | `Asia/Shanghai` | 时区设置 |
+
+### 端口配置
+
+默认端口: `9090`
+
+修改端口编辑 `docker-compose.yml`:
+
+```yaml
+ports:
+  - "8080:9090"  # 将8080映射到容器的9090
+```
 
 ## 🚀 快速开始
 

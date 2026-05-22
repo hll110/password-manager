@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  password-manager:
+    build: .
+    container_name: password-manager
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      # 持久化数据库和密钥
+      - ./db:/app/db
+      # 可选：持久化日志
+      - ./logs:/app/logs
+    environment:
+      - FLASK_ENV=production
+      - TZ=Asia/Shanghai
+    networks:
+      - password-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9090/api/stats"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  password-network:
+    driver: bridge
+
+volumes:
+  db-data:
+    driver: local
