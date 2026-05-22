@@ -1,5 +1,8 @@
 # 🔐 密码管理器
 
+[![GitHub](https://img.shields.io/badge/GitHub-hll110/password-manager-blue?style=flat-square&logo=github)](https://github.com/hll110/password-manager)
+[![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
+
 安全便捷的账号密码管理工具，支持Web浏览器访问，适配小米14 H5端。
 
 ## ✨ 功能特点
