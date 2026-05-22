@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+env/
+pip-selfcheck.json
+
+# 数据库和密钥
+db/passwords.db
+db/.key
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 系统文件
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# 日志
+*.log
+
+# 环境变量
+.env
+.env.local
+.env.*.local
+
+# 依赖
+node_modules/
+package-lock.json
