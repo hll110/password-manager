@@ -28,9 +28,6 @@ COPY . .
 # 创建必要的目录
 RUN mkdir -p /app/db /app/static /app/templates
 
-# 设置目录权限
-RUN chmod +x start.sh test.sh
-
 # 暴露端口
 EXPOSE 9090
 
