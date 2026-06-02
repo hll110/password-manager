@@ -269,6 +269,7 @@ body {
     min-height: 36px;
     font-size: 0.9rem;
     gap: 6px;
+    white-space: nowrap;
 }
 
 .btn-icon:active { background: var(--bg-tertiary); }
@@ -670,9 +671,16 @@ form { padding: 16px 20px 24px; }
 }
 
 .form-row .form-check {
-    display: flex;
-    align-items: flex-end;
     margin-bottom: 16px;
+}
+
+.field-spacer {
+    font-weight: 500;
+    margin-bottom: 6px;
+    font-size: 0.9rem;
+    line-height: 1.35;
+    visibility: hidden;
+    user-select: none;
 }
 
 .form-row .form-check .checkbox-label {
@@ -683,6 +691,9 @@ form { padding: 16px 20px 24px; }
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     transition: var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .form-row .form-check .checkbox-label:hover {
@@ -996,12 +1007,12 @@ form { padding: 16px 20px 24px; }
         gap: 0;
     }
 
-    .form-row .form-check {
-        align-items: flex-start;
-    }
-
     .form-row .form-check .checkbox-label {
         min-height: 44px;
+    }
+
+    .field-spacer {
+        display: none;
     }
 }
 
