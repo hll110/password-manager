@@ -28,6 +28,5 @@ networks:
   password-network:
     driver: bridge
 
-volumes:
-  db-data:
-    driver: local
+# 使用 bind mount 将容器数据映射到宿主机当前目录下的 db 文件夹
+# 请确保宿主机 db 目录存在且有写权限

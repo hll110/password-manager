@@ -25,8 +25,9 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # 复制应用代码
 COPY . .
 
-# 创建必要的目录
-RUN mkdir -p /app/db /app/static /app/templates
+# 创建必要的目录并设置权限，确保 bind mount 后容器内仍可写入
+RUN mkdir -p /app/db /app/logs /app/static /app/templates && \
+    chmod -R 777 /app/db /app/logs
 
 # 暴露端口
 EXPOSE 9090

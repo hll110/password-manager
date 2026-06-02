@@ -709,6 +709,244 @@ async function importData(event) {
     event.target.value = '';
 }
 
+// 批量导入
+let batchImportRows = [];
+let batchImportItems = [];
+let batchImportStep = 1;
+let batchImportFile = null;
+const BATCH_SIZE = 10;
+
+function showBatchImportModal() {
+    resetBatchImport();
+    const select = document.getElementById('batchImportCategory');
+    select.innerHTML = '<option value="">未分类</option>' +
+        categories.map(c => `<option value="${c.id}">${c.icon} ${escapeHtml(c.name)}</option>`).join('');
+    closeModal('settingsModal');
+    openModal('batchImportModal');
+}
+
+function closeBatchImportModal() {
+    closeModal('batchImportModal');
+    resetBatchImport();
+}
+
+function resetBatchImport() {
+    batchImportRows = [];
+    batchImportItems = [];
+    batchImportStep = 1;
+    batchImportFile = null;
+    document.getElementById('batchImportText').value = '';
+    document.getElementById('batchImportFile').value = '';
+    document.getElementById('batchFileLabel').textContent = '点击上传文件';
+    document.getElementById('batchHasHeader').checked = true;
+    goBatchStep(1);
+}
+
+function goBatchStep(step) {
+    batchImportStep = step;
+    document.querySelectorAll('.step').forEach(el => {
+        const s = parseInt(el.dataset.step);
+        el.classList.remove('active', 'done');
+        if (s === step) el.classList.add('active');
+        else if (s < step) el.classList.add('done');
+    });
+    document.getElementById('batchStep1').classList.toggle('hidden', step !== 1);
+    document.getElementById('batchStep2').classList.toggle('hidden', step !== 2);
+    document.getElementById('batchStep3').classList.toggle('hidden', step !== 3);
+    if (step === 3) document.getElementById('batchStep3Actions').classList.remove('hidden');
+}
+
+async function onBatchFileSelect(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    batchImportFile = file;
+    document.getElementById('batchFileLabel').textContent = file.name;
+}
+
+async function parseBatchSource() {
+    const text = document.getElementById('batchImportText').value.trim();
+    const file = batchImportFile;
+
+    if (!file && !text) {
+        showToast('请上传文件或粘贴数据', 'error');
+        return;
+    }
+
+    const formData = new FormData();
+    if (file) formData.append('file', file);
+    if (text) formData.append('text', text);
+
+    try {
+        showToast('正在解析数据...', 'info');
+        const response = await fetch(`${API_BASE}/import/parse`, { method: 'POST', body: formData });
+        const result = await response.json();
+
+        if (!response.ok) {
+            showToast(result.error || '解析失败', 'error');
+            return;
+        }
+
+        batchImportRows = result.rows || [];
+        if (batchImportRows.length === 0) {
+            showToast('未解析到有效数据', 'error');
+            return;
+        }
+
+        renderBatchStep2();
+        goBatchStep(2);
+        showToast(`共解析到 ${batchImportRows.length} 行数据`, 'success');
+    } catch {
+        showToast('解析请求失败', 'error');
+    }
+}
+
+function rowsToItems(rows, skipHeader) {
+    const start = skipHeader ? 1 : 0;
+    const items = [];
+    for (let i = start; i < rows.length; i++) {
+        const row = rows[i];
+        const title = (row[0] || '').trim();
+        if (!title) continue;
+        items.push({
+            title,
+            username: row[1] || '',
+            password: row[2] || '',
+            url: row[3] || '',
+        });
+    }
+    return items;
+}
+
+function renderBatchStep2() {
+    const hasHeader = document.getElementById('batchHasHeader').checked;
+    batchImportItems = rowsToItems(batchImportRows, hasHeader);
+
+    const countEl = document.getElementById('batchPreviewCount');
+    const table = document.getElementById('batchPreviewTable');
+    countEl.textContent = `(${batchImportItems.length} 条待导入)`;
+
+    let html = '<thead><tr><th>名称</th><th>账号</th><th>密码</th><th>网站</th></tr></thead><tbody>';
+    const previewLimit = Math.min(batchImportItems.length, 50);
+    for (let i = 0; i < previewLimit; i++) {
+        const item = batchImportItems[i];
+        html += `<tr>
+            <td>${escapeHtml(item.title)}</td>
+            <td>${escapeHtml(item.username)}</td>
+            <td class="col-pwd">${item.password ? '••••••' : ''}</td>
+            <td>${escapeHtml(item.url)}</td>
+        </tr>`;
+    }
+    if (batchImportItems.length > previewLimit) {
+        html += `<tr><td colspan="4" style="text-align:center;color:var(--text-secondary)">...还有 ${batchImportItems.length - previewLimit} 条数据未显示...</td></tr>`;
+    }
+    html += '</tbody>';
+    table.innerHTML = html;
+}
+
+async function startBatchImport() {
+    if (batchImportItems.length === 0) {
+        showToast('没有可导入的数据', 'error');
+        return;
+    }
+
+    const categoryId = document.getElementById('batchImportCategory').value;
+    const items = batchImportItems.map(item => ({
+        ...item,
+        category_id: categoryId ? parseInt(categoryId) : null,
+    }));
+
+    goBatchStep(3);
+    resetBatchProgress(items.length);
+
+    for (let i = 0; i < items.length; i += BATCH_SIZE) {
+        const chunk = items.slice(i, i + BATCH_SIZE);
+        try {
+            const response = await fetch(`${API_BASE}/import/batch`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ items: chunk }),
+            });
+            const result = await response.json();
+            const processed = Math.min(i + BATCH_SIZE, items.length);
+
+            if (response.ok) {
+                updateBatchProgress(processed, result.imported || chunk.length, result.errors || []);
+            } else {
+                updateBatchProgress(processed, 0, result.error ? [result.error] : ['导入失败']);
+            }
+        } catch (err) {
+            const processed = Math.min(i + BATCH_SIZE, items.length);
+            updateBatchProgress(processed, 0, [err.message || '网络请求失败']);
+        }
+
+        // 小延迟让 UI 有机会刷新
+        await new Promise(r => setTimeout(r, 50));
+    }
+
+    document.getElementById('batchFinishBtn').disabled = false;
+    document.getElementById('batchProgressText').textContent = '导入完成';
+}
+
+function resetBatchProgress(total) {
+    document.getElementById('batchProgressFill').style.width = '0%';
+    document.getElementById('batchProgressNum').textContent = `0 / ${total}`;
+    document.getElementById('batchProgressText').textContent = '正在导入...';
+    document.getElementById('batchStatSuccess').textContent = '0';
+    document.getElementById('batchStatFail').textContent = '0';
+    document.getElementById('batchStatTotal').textContent = total;
+    document.getElementById('batchLogList').innerHTML = '';
+    document.getElementById('batchFinishBtn').disabled = true;
+}
+
+function updateBatchProgress(current, successInChunk, errors) {
+    const total = batchImportItems.length;
+    const percent = Math.round((current / total) * 100);
+    document.getElementById('batchProgressFill').style.width = `${percent}%`;
+    document.getElementById('batchProgressNum').textContent = `${current} / ${total}`;
+
+    const successEl = document.getElementById('batchStatSuccess');
+    const failEl = document.getElementById('batchStatFail');
+    let successCount = parseInt(successEl.textContent);
+    let failCount = parseInt(failEl.textContent);
+
+    const logList = document.getElementById('batchLogList');
+
+    if (errors && errors.length > 0) {
+        failCount += errors.length;
+        errors.forEach(err => {
+            logList.insertAdjacentHTML('beforeend', `
+                <div class="batch-log-item error">
+                    <span class="log-icon"><i class="fas fa-times"></i></span>
+                    <span class="log-text">${escapeHtml(err)}</span>
+                    <span class="log-msg">失败</span>
+                </div>
+            `);
+        });
+    }
+
+    if (successInChunk > 0) {
+        successCount += successInChunk;
+        logList.insertAdjacentHTML('beforeend', `
+            <div class="batch-log-item success">
+                <span class="log-icon"><i class="fas fa-check"></i></span>
+                <span class="log-text">成功导入 ${successInChunk} 条账号</span>
+                <span class="log-msg">成功</span>
+            </div>
+        `);
+    }
+
+    successEl.textContent = successCount;
+    failEl.textContent = failCount;
+    logList.scrollTop = logList.scrollHeight;
+}
+
+function finishBatchImport() {
+    closeBatchImportModal();
+    loadAccounts();
+    loadStats();
+    showToast('批量导入已完成', 'success');
+}
+
 function showSettingsPanel() {
     openModal('settingsModal');
 }

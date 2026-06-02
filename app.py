@@ -1,6 +1,8 @@
 import os
 import sqlite3
 import json
+import csv
+import io
 from datetime import datetime
 from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
@@ -452,6 +454,93 @@ def import_data():
     conn.commit()
     conn.close()
     return jsonify({'message': f'成功导入 {imported} 条账号', 'imported': imported})
+
+
+@app.route('/api/import/parse', methods=['POST'])
+def import_parse():
+    file = request.files.get('file')
+    text = request.form.get('text', '').strip()
+    rows = []
+
+    try:
+        if file and file.filename:
+            filename = file.filename.lower()
+            if filename.endswith('.xlsx') or filename.endswith('.xls'):
+                try:
+                    import openpyxl
+                except ImportError:
+                    return jsonify({'error': '服务器未安装 openpyxl，无法解析 Excel 文件，请先安装依赖'}), 400
+                wb = openpyxl.load_workbook(io.BytesIO(file.read()), data_only=True)
+                ws = wb.active
+                for row in ws.iter_rows(values_only=True):
+                    rows.append([str(cell) if cell is not None else '' for cell in row])
+            else:
+                content = file.read().decode('utf-8-sig')
+                delimiter = '\t' if '\t' in content.split('\n')[0] else ','
+                reader = csv.reader(io.StringIO(content), delimiter=delimiter)
+                rows = [row for row in reader]
+        elif text:
+            delimiter = '\t' if '\t' in text.split('\n')[0] else ','
+            reader = csv.reader(io.StringIO(text), delimiter=delimiter)
+            rows = [row for row in reader]
+        else:
+            return jsonify({'error': '请上传文件或粘贴数据'}), 400
+    except Exception as e:
+        return jsonify({'error': f'解析失败：{str(e)}'}), 400
+
+    # 过滤空行
+    rows = [row for row in rows if any(cell.strip() for cell in row)]
+    return jsonify({'rows': rows, 'total': len(rows)})
+
+
+@app.route('/api/import/batch', methods=['POST'])
+def import_batch():
+    data = request.json or {}
+    items = data.get('items', [])
+    if not items:
+        return jsonify({'error': '没有可导入的数据'}), 400
+
+    conn = pm.get_connection()
+    cursor = conn.cursor()
+    imported = 0
+    errors = []
+
+    for idx, item in enumerate(items):
+        title = (item.get('title') or '').strip()
+        if not title:
+            errors.append(f'第 {idx + 1} 行：标题不能为空')
+            continue
+        try:
+            encrypted_password = pm.encrypt(item.get('password', ''))
+            cursor.execute('''
+                INSERT INTO accounts (title, username, password, url, category_id, notes, favorite)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                title,
+                item.get('username'),
+                encrypted_password,
+                item.get('url'),
+                item.get('category_id'),
+                item.get('notes'),
+                1 if item.get('favorite') else 0,
+            ))
+            account_id = cursor.lastrowid
+            cursor.execute('''
+                INSERT INTO account_versions (account_id, username, password, notes, version)
+                VALUES (?, ?, ?, ?, 1)
+            ''', (account_id, item.get('username'), encrypted_password, item.get('notes')))
+            imported += 1
+        except Exception as e:
+            errors.append(f'第 {idx + 1} 行：{str(e)}')
+
+    conn.commit()
+    conn.close()
+
+    result = {'imported': imported, 'message': f'成功导入 {imported} 条账号'}
+    if errors:
+        result['errors'] = errors
+        result['message'] += f'，{len(errors)} 条失败'
+    return jsonify(result)
 
 
 @app.route('/api/stats', methods=['GET'])

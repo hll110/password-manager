@@ -972,3 +972,295 @@ form { padding: 16px 20px 24px; }
     opacity: 0.4;
     display: block;
 }
+
+/* 批量导入 */
+.batch-import-panel {
+    padding: 16px 20px 24px;
+}
+
+.batch-import-panel .hint {
+    font-weight: normal;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+/* 步骤指示器 */
+.steps-indicator {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    padding: 0 8px;
+    position: relative;
+}
+
+.steps-indicator::before {
+    content: '';
+    position: absolute;
+    top: 14px;
+    left: 20px;
+    right: 20px;
+    height: 2px;
+    background: var(--border-color);
+    z-index: 0;
+}
+
+.step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    position: relative;
+    z-index: 1;
+    background: var(--bg-primary);
+    padding: 0 6px;
+}
+
+.step span {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--bg-tertiary);
+    border: 2px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: var(--transition);
+}
+
+.step.active {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.step.active span {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+}
+
+.step.done span {
+    background: var(--success-color);
+    border-color: var(--success-color);
+    color: white;
+}
+
+/* 步骤内容 */
+.batch-step-content { animation: fadeIn 0.25s ease; }
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.batch-import-hint {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.batch-import-hint p { margin-bottom: 6px; color: var(--text-primary); }
+.batch-import-hint ul { padding-left: 18px; }
+.batch-import-hint li { margin-bottom: 4px; }
+.batch-import-hint code {
+    background: var(--bg-tertiary);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+.batch-options {
+    margin-bottom: 14px;
+    padding: 10px 12px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+}
+
+.batch-mapping-hint {
+    margin-top: 8px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.batch-preview { margin-bottom: 16px; }
+.batch-preview h3 {
+    font-size: 0.95rem;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+.batch-preview h3 span {
+    font-weight: normal;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+.batch-preview-table-wrap {
+    max-height: 240px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+}
+
+.batch-preview-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+.batch-preview-table th,
+.batch-preview-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border-color);
+    text-align: left;
+    white-space: nowrap;
+}
+
+.batch-preview-table th {
+    background: var(--bg-secondary);
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+}
+
+.batch-preview-table td {
+    color: var(--text-secondary);
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.batch-preview-table tr:last-child td { border-bottom: none; }
+
+.batch-preview-table .col-pwd {
+    font-family: monospace;
+    letter-spacing: 1px;
+}
+
+/* 进度条 */
+.batch-progress-wrap {
+    margin-bottom: 16px;
+}
+
+.batch-progress-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+}
+
+.batch-progress-info span:last-child {
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.batch-progress-bar {
+    width: 100%;
+    height: 8px;
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 14px;
+}
+
+.batch-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-color), #8b5cf6);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.batch-progress-stats {
+    display: flex;
+    gap: 10px;
+}
+
+.stat-box {
+    flex: 1;
+    text-align: center;
+    padding: 10px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+}
+
+.stat-box.success { border-color: var(--success-color); background: rgba(16, 185, 129, 0.08); }
+.stat-box.error { border-color: var(--danger-color); background: rgba(239, 68, 68, 0.08); }
+
+.stat-box-num {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.stat-box.success .stat-box-num { color: var(--success-color); }
+.stat-box.error .stat-box-num { color: var(--danger-color); }
+
+.stat-box-label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+/* 日志 */
+.batch-log-wrap {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-secondary);
+    margin-bottom: 16px;
+    padding: 10px 12px;
+}
+
+.batch-log-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 0.85rem;
+}
+
+.batch-log-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.batch-log-item:last-child { border-bottom: none; }
+
+.batch-log-item .log-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    flex-shrink: 0;
+}
+
+.batch-log-item.success .log-icon { background: rgba(16, 185, 129, 0.15); color: var(--success-color); }
+.batch-log-item.error .log-icon { background: rgba(239, 68, 68, 0.15); color: var(--danger-color); }
+
+.batch-log-item .log-text {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.batch-log-item .log-msg {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    flex-shrink: 0;
+}
+
+.batch-log-item.error .log-msg { color: var(--danger-color); }

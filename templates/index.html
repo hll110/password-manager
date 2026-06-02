@@ -293,9 +293,12 @@
                             <i class="fas fa-download"></i> 导出数据
                         </button>
                         <label class="btn-secondary btn-block import-btn">
-                            <i class="fas fa-upload"></i> 导入数据
+                            <i class="fas fa-upload"></i> 导入数据 (JSON)
                             <input type="file" id="importFile" accept=".json" hidden onchange="importData(event)">
                         </label>
+                        <button class="btn-secondary btn-block" onclick="showBatchImportModal()">
+                            <i class="fas fa-file-csv"></i> 批量导入 (CSV)
+                        </button>
                     </div>
                     <div class="settings-group">
                         <h3>外观</h3>
@@ -306,6 +309,115 @@
                     <div class="settings-group">
                         <h3>关于</h3>
                         <p class="settings-desc">密码管理器 v2.0 · 本地加密存储</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 批量导入弹窗 -->
+        <div class="modal" id="batchImportModal">
+            <div class="modal-content modal-sheet">
+                <div class="modal-header">
+                    <h2 id="batchImportTitle">批量导入账号</h2>
+                    <button class="btn-icon" onclick="closeBatchImportModal()" aria-label="关闭">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="batch-import-panel">
+                    <!-- 步骤指示器 -->
+                    <div class="steps-indicator" id="batchSteps">
+                        <div class="step active" data-step="1"><span>1</span>上传数据</div>
+                        <div class="step" data-step="2"><span>2</span>预览确认</div>
+                        <div class="step" data-step="3"><span>3</span>导入结果</div>
+                    </div>
+
+                    <!-- 步骤 1：上传数据 -->
+                    <div class="batch-step-content" id="batchStep1">
+                        <div class="form-group">
+                            <label>选择分类（可选）</label>
+                            <select id="batchImportCategory"></select>
+                        </div>
+                        <div class="form-group">
+                            <label>上传文件 <span class="hint">支持 .csv, .xlsx, .txt</span></label>
+                            <label class="import-btn btn-secondary btn-block">
+                                <i class="fas fa-upload"></i> <span id="batchFileLabel">点击上传文件</span>
+                                <input type="file" id="batchImportFile" accept=".csv,.xlsx,.xls,.txt" hidden onchange="onBatchFileSelect(event)">
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label>或粘贴数据 <span class="hint">支持 CSV 或 制表符分隔</span></label>
+                            <textarea id="batchImportText" rows="4" placeholder="名称,账号,密码,网站&#10;GitHub, user@example.com, mypassword, https://github.com&#10;微信, wxid123, pass123, "></textarea>
+                        </div>
+                        <div class="batch-import-hint">
+                            <p><strong>格式说明：</strong></p>
+                            <ul>
+                                <li>每行一条记录，字段顺序：<code>名称,账号,密码,网站</code></li>
+                                <li>支持逗号 <code>,</code> 或制表符 <code>Tab</code> 分隔</li>
+                                <li>Excel 请直接上传 .xlsx 文件，无需手动复制粘贴</li>
+                                <li>如果内容包含逗号，请用英文双引号包裹，如：<code>"公司,官网",admin,pass,https://a.com</code></li>
+                            </ul>
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" class="btn-secondary" onclick="closeBatchImportModal()">取消</button>
+                            <button type="button" class="btn-primary" onclick="parseBatchSource()">解析并预览</button>
+                        </div>
+                    </div>
+
+                    <!-- 步骤 2：预览确认 -->
+                    <div class="batch-step-content hidden" id="batchStep2">
+                        <div class="batch-options">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="batchHasHeader" checked onchange="renderBatchStep2()">
+                                <span>第一行是表头（跳过表头不导入）</span>
+                            </label>
+                            <div class="batch-mapping-hint">
+                                系统将按以下顺序识别字段：第1列=名称，第2列=账号，第3列=密码，第4列=网站
+                            </div>
+                        </div>
+                        <div class="batch-preview" id="batchPreviewContainer">
+                            <h3>数据预览 <span id="batchPreviewCount"></span></h3>
+                            <div class="batch-preview-table-wrap">
+                                <table class="batch-preview-table" id="batchPreviewTable"></table>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" class="btn-secondary" onclick="goBatchStep(1)">上一步</button>
+                            <button type="button" class="btn-primary" onclick="startBatchImport()">开始导入</button>
+                        </div>
+                    </div>
+
+                    <!-- 步骤 3：导入进度与结果 -->
+                    <div class="batch-step-content hidden" id="batchStep3">
+                        <div class="batch-progress-wrap">
+                            <div class="batch-progress-info">
+                                <span id="batchProgressText">准备导入...</span>
+                                <span id="batchProgressNum">0 / 0</span>
+                            </div>
+                            <div class="batch-progress-bar">
+                                <div class="batch-progress-fill" id="batchProgressFill" style="width:0%"></div>
+                            </div>
+                            <div class="batch-progress-stats">
+                                <div class="stat-box success">
+                                    <div class="stat-box-num" id="batchStatSuccess">0</div>
+                                    <div class="stat-box-label">成功</div>
+                                </div>
+                                <div class="stat-box error">
+                                    <div class="stat-box-num" id="batchStatFail">0</div>
+                                    <div class="stat-box-label">失败</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-box-num" id="batchStatTotal">0</div>
+                                    <div class="stat-box-label">总计</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="batch-log-wrap" id="batchLogWrap">
+                            <div class="batch-log-list" id="batchLogList"></div>
+                        </div>
+                        <div class="form-actions" id="batchStep3Actions">
+                            <button type="button" class="btn-secondary" onclick="goBatchStep(2)">上一步</button>
+                            <button type="button" class="btn-primary" id="batchFinishBtn" onclick="finishBatchImport()" disabled>完成</button>
+                        </div>
                     </div>
                 </div>
             </div>
